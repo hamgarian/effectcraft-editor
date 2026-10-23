@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0 — 2026-10-23
+Footage editing.
+- `jsx/footage.jsx`: placeClip, assemble (cut lists; crossfade, dip, whip, zoom, slide, glitch), slip, setSpeed, speedRamp, freezeFrame, reverseClip, jCut / lCut, audioFade, duck, punchIn, kenBurns, pip, splitScreen, applyReframe, matchColor, look, filmLook, timecodeBurn.
+- `scripts/footage.py`: probe (flags variable frame rate and black-rendering H.264 4:4:4), conform / proxy / LUT bake, scenes, silences, beatcut, colormatch (Levels + 3D LUT), reframe (faces or motion, smoothed), normalize (two-pass loudness).
+- Tests read the source frame back from rendered pixels (grey = 2 x frame), so speed ramps, freezes, reverses, slips and speed changes are checked to within 2 frames; colour matching is checked end to end inside EffectCraft.
+- Tested on EffectCraft 0.16.0 (0.14.0 renders bit-identical); quirks: High 4:4:4 H.264 renders black, Levels' per-channel parameters, Scene Edit Detection off by 0.88 s, in points snap to frames.
+- Templates are documented as functional graphics; hero motion is derived from the brief or reference.
+- README redesigned.
+
 ## 0.3.0 — 2026-10-23
 Closes the feature gaps found against Pluviobyte/video-production-skills, full-aigc-skills/effectcraft-skills,
 Vinciux99/effectcraft-claude-skill, jhonsu01/effectcraft-mcp-server and OpenMontage.

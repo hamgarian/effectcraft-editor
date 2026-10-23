@@ -26,6 +26,10 @@ the workaround shown.
 | A null is a 100 px square anchored at [50,50]: children placed at [0,0] sit 50 px up-left of the null's position. Verified (title and kinetic type rendered at x 0.46, y 0.42 of frame). | Reset the null's Anchor Point to [0,0] (`rig()` in templates.jsx). |
 | Text sits on its baseline, so "centred" text renders above centre. | Anchor on the measured ink: `sourceRectAtTime(0,false)` -> anchor = rect centre (`text()` in templates.jsx does it). |
 | `essential.addProperty` with a layer INDEX resolved to a different layer ("no property text/sourceText"). | Address layers by unique name. |
+| H.264 in the "High 4:4:4 Predictive" profile (any lossless x264, even with 4:2:0 pixels) renders as BLACK frames, no error. Verified on 0.16.0. | `footage.py probe` flags it; `footage.py conform` re-encodes to High profile 4:2:0. |
+| Levels' Input/Output fields drive the composite RGB whatever the Channel menu says. Verified (Channel = Red + Output White 0.5 darkened every channel). | Per-channel parameters in the same effect: "Red Output White", "Green Gamma"... (`matchColor()`). |
+| Scene Edit Detection (`layer.sceneEditDetection`) placed a hard cut at 2.00 s at 2.88 s. | `footage.py scenes` (tested to within 2 frames). |
+| In/out points snap to whole frames (1.5 s at 25 fps lands at 1.48 s). | Plan cut points in frames. |
 | `track.motion` only creates a tracker (0 keys). | `track.new` -> `track.setPoint` -> `track.analyze {wait:true}` -> `track.apply` (`trackAttach()`). |
 
 ## Effects seen working in 0.14.0

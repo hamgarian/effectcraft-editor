@@ -6,13 +6,13 @@
 
 **An agent skill that makes motion-design edits in [EffectCraft](https://github.com/storytold/effectcraft) — and checks them with numbers, not vibes.**
 
-Recreate a reel shot for shot, cut an original edit to the beat, drop in titles and lower thirds,
+Cut real footage, recreate a reel shot for shot, edit to the beat, drop in titles and lower thirds,
 composite characters into photos, render photoreal 3D sets, and deliver in any format.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-2ea44f)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.3.0-1f6feb)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.4.0-1f6feb)](CHANGELOG.md)
 [![EffectCraft](https://img.shields.io/badge/tested%20on-EffectCraft%200.16.0-0b2a5b)](tests/RESULTS.md)
-[![Tests](https://img.shields.io/badge/tests-38%20passing-2ea44f)](tests/RESULTS.md)
+[![Tests](https://img.shields.io/badge/tests-60%20passing-2ea44f)](tests/RESULTS.md)
 [![Blender](https://img.shields.io/badge/Blender-5.0%20(optional)-e87d0d)](scripts/blender)
 
 [Quickstart](#-quickstart) · [What it does](#-what-it-does) · [How it works](#-how-it-works) · [Toolbox](#-toolbox) · [Compare](#-how-it-compares) · [Docs](#-docs)
@@ -30,6 +30,8 @@ composite characters into photos, render photoreal 3D sets, and deliver in any f
 ## 💬 Try saying
 
 > *"Recreate this reel in EffectCraft, down to the camera moves."*
+>
+> *"Cut these 12 clips into a 30-second montage on the beat, match their colours, and make a vertical version."*
 >
 > *"Make a 15-second vertical edit in the style of this video, cut to this song."*
 >
@@ -64,6 +66,17 @@ Per-OS steps and MCP setup: [`references/setup.md`](references/setup.md).
 ## ✨ What it does
 
 <table>
+<tr>
+<td colspan="2" valign="top">
+
+**✂️ Edit real footage**<br>
+Probe and conform clips (variable frame rate and black-rendering codecs flagged), find shots, cut the pauses out of a
+talking head, build beat-synced montages, then assemble with trims, slips, speed ramps, freezes, reverses, J/L cuts,
+punch-ins, picture-in-picture and split screens. Colour-match clips to each other, reframe for vertical by following
+the subject, duck the music under speech. Every time helper is checked frame-accurately against rendered pixels.
+
+</td>
+</tr>
 <tr>
 <td width="50%" valign="top">
 
@@ -161,7 +174,7 @@ From a real reel recreation (logs from the project, not rerun for this repo):
 
 On a second reel, `framemetrics.py` picked out the weakest stretch on its own (f174–179, a macro push that stops short) —
 the same shot a separate AI review flagged — and `audio.py` read the music at **139.7 BPM** with 26 of 47 cuts on a beat.
-Test runs: [`tests/RESULTS.md`](tests/RESULTS.md) (38 passing on EffectCraft 0.16.0; 0.14.0 and 0.16.0 render bit-identical).
+Test runs: [`tests/RESULTS.md`](tests/RESULTS.md) (60 passing on EffectCraft 0.16.0; 0.14.0 and 0.16.0 render bit-identical).
 
 ## 🧰 Toolbox
 
@@ -176,6 +189,18 @@ Test runs: [`tests/RESULTS.md`](tests/RESULTS.md) (38 passing on EffectCraft 0.1
 | `framemetrics.py` | every frame: MAE/PSNR/SSIM, worst frames, cut boundaries, lead/lag, codec noise floor |
 | `camtrack.py` | camera zoom / roll / pan per shot |
 | `glitchfind.py` · `edgeblack.py` · `joincheck.py` | one-frame pops · black borders · bad seams after re-renders |
+
+</details>
+
+<details>
+<summary><b>Edit footage</b> — prep, analysis, and the editing helpers</summary>
+
+| Tool | Does |
+|---|---|
+| `footage.py probe` · `conform` · `normalize` | flag VFR / unsupported codecs · frame-accurate copies, proxies, LUT bake · loudness |
+| `footage.py scenes` · `silences` · `beatcut` | shots in a long take · talk without the pauses · one clip per beat |
+| `footage.py colormatch` · `reframe` | Levels + 3D LUT to match a reference · subject-following vertical crop |
+| `jsx/footage.jsx` | `assemble` with 6 transitions, `slip`, `setSpeed`, `speedRamp`, `freezeFrame`, `reverseClip`, `jCut`/`lCut`, `duck`, `punchIn`, `kenBurns`, `pip`, `splitScreen`, `applyReframe`, `matchColor`, `look`, `filmLook` |
 
 </details>
 
@@ -214,6 +239,7 @@ Test runs: [`tests/RESULTS.md`](tests/RESULTS.md) (38 passing on EffectCraft 0.1
 | | **this skill** | [Pluviobyte](https://github.com/Pluviobyte/video-production-skills) | [full-aigc](https://github.com/full-aigc-skills/effectcraft-skills) | [Vinciux99](https://github.com/Vinciux99/effectcraft-claude-skill) | [jhonsu01](https://github.com/jhonsu01/effectcraft-mcp-server) |
 |---|---|---|---|---|---|
 | engine | EffectCraft + Blender | HyperFrames / Remotion | EffectCraft | EffectCraft | EffectCraft (MCP) |
+| edit real footage (cut lists, speed ramps, J/L cuts, colour match, reframe) | ✅ | — | footage import | — | trim, speed, effects |
 | reference recreation + every-frame metrics | ✅ + camera per shot | ✅ | — | — | — |
 | fidelity levels, report, motion catalog | ✅ | ✅ | delivery checks | — | — |
 | original edits / reference style | ✅ | ✅ | genre skills | — | — |
@@ -237,6 +263,7 @@ full-aigc's set also has a skill named `effectcraft-editor`; install one of them
 | [`SKILL.md`](SKILL.md) | the workflow your agent follows |
 | [`references/rules.md`](references/rules.md) | compositing, 3D, assets, motion — rules learned from real misses |
 | [`references/quirks.md`](references/quirks.md) | EffectCraft scripting traps and their workarounds |
+| [`references/footage.md`](references/footage.md) | editing real clips: prep, finding material, helpers, editing rules |
 | [`references/director.md`](references/director.md) · [`audio.md`](references/audio.md) · [`formats.md`](references/formats.md) · [`assets.md`](references/assets.md) | planning an edit, music, delivery, art |
 | [`references/fidelity.md`](references/fidelity.md) · [`components.md`](references/components.md) · [`report-template.md`](references/report-template.md) | what you may claim, proven motions, the running report |
 | [`references/operating.md`](references/operating.md) · [`setup.md`](references/setup.md) | driving EffectCraft from an agent, installing |
@@ -248,6 +275,7 @@ full-aigc's set also has a skill named `effectcraft-editor`; install one of them
 - With original art, MAE/SSIM aren't pass marks — use them for cuts, lead/lag and worst frames.
 - Beat detection is a classic spectral-flux tracker: great for pop/electronic, weaker on rubato or ambient music.
 - Safe areas are common margins, not platform specs. No CapCut draft export (use FCP XML / OTIO).
+- `footage.py reframe` uses OpenCV's face detector when the installed build has it, else it follows motion.
 
 ## 📄 License
 

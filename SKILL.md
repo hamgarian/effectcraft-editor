@@ -1,8 +1,8 @@
 ---
 name: effectcraft-editor
-description: Make motion-design edits in EffectCraft (the open-source After Effects-like compositor) by writing JSX build scripts, rendering headless, and checking the result with measurements instead of by eye; photoreal 3D sets come from headless Blender. Use for any EffectCraft edit or motion graphic - recreating or matching a reference video/reel/ad, an original edit in a reference's style, lower thirds / titles / logo reveals / kinetic type, edits cut to music with sound effects, captions and narration, vertical/square social formats, alpha/ProRes/WebM/GIF/Lottie/timeline exports, tracking, compositing cut-outs into photos - or when a render looks wrong (black edges, ghosts, empty frames, wrong camera, wrong colours, off-beat cuts, "looks like CG", "pasted on").
+description: Make motion-design and footage edits in EffectCraft (the open-source After Effects-like compositor) by writing JSX build scripts, rendering headless, and checking the result with measurements instead of by eye; photoreal 3D sets come from headless Blender. Use for any EffectCraft edit or motion graphic - cutting real footage (vlogs, talking heads, montages: trims, speed ramps, J/L cuts, colour matching, reframing for vertical), recreating or matching a reference video/reel/ad, an original edit in a reference's style, lower thirds / titles / logo reveals / kinetic type, edits cut to music with sound effects, captions and narration, vertical/square social formats, alpha/ProRes/WebM/GIF/Lottie/timeline exports, tracking, compositing cut-outs into photos - or when a render looks wrong (black edges, ghosts, empty frames, wrong camera, wrong colours, off-beat cuts, "looks like CG", "pasted on").
 metadata:
-  version: 0.3.0
+  version: 0.4.0
 ---
 
 # effectcraft-editor
@@ -23,8 +23,14 @@ engine quirks listed there.
   `trackAttach` / `stabilize` (motion tracking), `captionTrack` (burned-in captions), `shapeGroup`, `dashes`, `stepped`,
   `boil`, `infiniteBackground`, `imageSequence` (a rendered PNG sequence as layers), `compositeCutout` (cut-out into a
   photo plate). Headless scripts can't `#include`: bundle first.
+- **`jsx/footage.jsx`**: editing real clips: `placeClip`, `assemble` (cut lists with crossfade / dip / whip / zoom /
+  slide / glitch), `slip`, `setSpeed`, `speedRamp`, `freezeFrame`, `reverseClip`, `jCut` / `lCut`, `audioFade`, `duck`,
+  `punchIn`, `kenBurns`, `pip`, `splitScreen`, `applyReframe`, `matchColor`, `look`, `filmLook`, `timecodeBurn`.
+  Workflow and rules: `references/footage.md`.
 - **`jsx/templates.jsx`**: `lowerThird`, `titleCard`, `logoReveal`, `kineticType`, `textOrbit3D`, `socialReframe`,
-  plus `text`, `essentialize` / `exportTemplate` (named controls, `.ectemplate`), `FORMATS` / `SAFE`. See `references/components.md`.
+  plus `text`, `essentialize` / `exportTemplate` (named controls, `.ectemplate`), `FORMATS` / `SAFE`. Use templates for
+  FUNCTIONAL graphics (names, captions, end cards, reframes); derive the hero motion from the brief or reference and
+  say why each move fits - a preset look on every edit is the slideshow problem in another form. See `references/components.md`.
 - **`scripts/`** (Python 3.10+, `opencv-python`, `numpy`; ffmpeg/ffprobe on PATH):
 
 | Script | Answers |
@@ -38,6 +44,7 @@ engine quirks listed there.
 | `audio.py beats / sfx / mix / mux / cutsync / check` | tempo, beats and hits; original SFX; mix and mux; cuts vs beats; loudness and sync vs the reference (`references/audio.md`) |
 | `captions.py lines / beats / whisper` | timed captions -> SRT, VTT, JSX (`captionTrack`) |
 | `tts.py "text" OUT.wav` | offline narration (Piper, Windows voices, macOS say, espeak) |
+| `footage.py probe / conform / scenes / silences / beatcut / colormatch / reframe / normalize` | footage prep and analysis: flag VFR and black-rendering codecs, frame-accurate copies, shots, talk without pauses, beat montages, colour matching (Levels + LUT), subject-following vertical crops, loudness |
 | `stylemap.py REF OUT` | a reference's shot list, camera, palette, energy, tempo as a beat table to build an original on |
 | `joincheck.py SEQ --joins a,b` | jumps, repeated or missing frames where a re-rendered range meets old frames |
 | `title_art.py IN OUT --title ...` | your own titles and small print on generated art, fitted to band and width |
@@ -68,7 +75,8 @@ engine quirks listed there.
    assets with real small print. Generate art without text, add text yourself (`references/assets.md`). Photo-like
    scenes and devices: a Blender set (`references/rules.md` -> Photoreal 3D). Music: `audio.py beats` first, then time
    cuts, whips and slams to beats and hits (`references/audio.md`). Original art and text only; no logos, lyrics or
-   copyrighted music in outputs. Common graphics start from `jsx/templates.jsx`.
+   copyrighted music in outputs. Common graphics start from `jsx/templates.jsx`. Edits from real clips: probe and
+   conform the footage first, then cut lists from `footage.py` into `assemble()` (`references/footage.md`).
 3. **Build** one script, one comp per shot, a main comp that places shots on the reference's cut times. End the script
    with `fxCheck()`. Run `bracecheck.py`, `bundle.py`, then `effectcraft-cli script _bundle.jsx --empty`. **Stop if the
    build output doesn't show your own success line**: otherwise you will render and review the previous project.

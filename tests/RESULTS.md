@@ -1,15 +1,19 @@
-# Test results (v0.3.0, 2026-10-23)
+# Test results (v0.4.0, 2026-10-23)
 
-Run from a fresh `git clone`, Windows 11, Python 3.13, EffectCraft **0.16.0** portable (`EFFECTCRAFT_CLI` set),
-Blender 5.0, Windows SAPI voices. The same suite also passed on EffectCraft 0.14.0.
+Run from a clean copy, Windows 11, Python 3.13, EffectCraft **0.16.0** portable (`EFFECTCRAFT_CLI` set),
+Blender 5.0, Windows SAPI voices. The v0.3.0 suite (38 tests) also passed on EffectCraft 0.14.0.
 
 ```
 python -m pytest tests -q
-38 passed in 101.10s
-  test_tools.py   measurement, style map, joins, ledger, doctor, cut-outs, titles, Blender shadow set
-  test_audio.py   beats (120 BPM click track), SFX + mix + mux + cut sync, sync offset, captions, TTS
-  test_engine.py  6 templates render, 2 centring checks, .ectemplate re-rendered with new values,
-                  5 export presets verified (ProRes alpha, WebM alpha, PNG RGBA, Lottie, OTIO), tracking follows a target
+60 passed in 134.85s
+  test_tools.py    measurement, style map, joins, ledger, doctor, cut-outs, titles, Blender shadow set
+  test_audio.py    beats (120 BPM click track), SFX + mix + mux + cut sync, sync offset, captions, TTS
+  test_footage.py  VFR conform, scene cut at 2.00 s, silences, beat montage, colour match + LUT, reframe follows, loudness
+  test_engine.py   6 templates render, 2 centring checks, .ectemplate re-rendered with new values,
+                   5 export presets verified (ProRes alpha, WebM alpha, PNG RGBA, Lottie, OTIO), tracking follows a target,
+                   footage helpers: assemble + crossfade, speed ramp / freeze / reverse / speed / slip read back from
+                   rendered pixels (grey = 2 x source frame), pip, split screen, look + letterbox, J-cut, duck, fades,
+                   punch-in, whip and dip transitions, colour match end to end
 
 python scripts/bundle.py tests/smoke.jsx _smoke.jsx && effectcraft-cli script _smoke.jsx --empty
 SMOKE OK

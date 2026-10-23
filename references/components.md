@@ -19,7 +19,9 @@ limits: <where it breaks>
 
 ## Runnable templates (`jsx/templates.jsx`)
 
-Each returns a comp; `essentialize()` exposes named controls and `exportTemplate()` writes an `.ectemplate` that
+For FUNCTIONAL graphics (names, titles, captions, end cards, reframes), where consistency matters more than
+invention, and as working examples of the engine paths (controls, alpha). The hero motion of an edit comes from the
+brief or the reference (the patterns below record why each worked), not from a preset. Each returns a comp; `essentialize()` exposes named controls and `exportTemplate()` writes an `.ectemplate` that
 `effectcraft-cli render --template T --values v.json` renders without a script. `tests/test_engine.py` renders all of them.
 
 | function | what | controls |
