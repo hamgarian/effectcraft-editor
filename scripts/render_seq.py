@@ -5,11 +5,11 @@ Any OS; replaces render_seq.ps1. Frames that already exist are kept unless --for
 Writes DIR/f_00000.png ...; records the run in ledger.jsonl (scripts/ledger.py). Needs effectcraft-cli and ffmpeg.
 """
 import os
-import shutil
 import subprocess
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from ec_cli import find_cli  # noqa: E402
 from ledger import Ledger  # noqa: E402
 
 a = sys.argv[1:]
@@ -27,9 +27,9 @@ a = [x for x in a if x != "--force"]
 if len(a) != 4:
     sys.exit(__doc__)
 proj, comp, frames, out = a[0], a[1], int(a[2]), a[3]
-cli = os.environ.get("EFFECTCRAFT_CLI") or shutil.which("effectcraft-cli")
+cli = find_cli()
 if not cli:
-    sys.exit("effectcraft-cli not found: put it on PATH or set EFFECTCRAFT_CLI")
+    sys.exit("effectcraft-cli not found: ask the user where EffectCraft is, then `python scripts/ec_cli.py --set PATH`")
 seq = seq or f"seq_{comp}".replace(" ", "_")
 os.makedirs(seq, exist_ok=True)
 f1 = frames - 1 if f1 is None else f1

@@ -21,7 +21,10 @@ import shutil
 import subprocess
 import sys
 
-CLI = os.environ.get("EFFECTCRAFT_CLI") or shutil.which("effectcraft-cli") or "effectcraft-cli"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from ec_cli import find_cli  # noqa: E402
+
+CLI = find_cli() or "effectcraft-cli"
 RENDER = {"h264": ["--format", "h264"], "hevc": ["--format", "hevc"],
           "prores": ["--format", "prores", "--prores", "4444", "--channels", "rgba"],
           "webm": ["--format", "webm", "--webm-codec", "vp9", "--channels", "rgba"],
@@ -43,7 +46,7 @@ def stream(path):
 
 def main(a):
     if not (os.path.exists(CLI) or shutil.which(CLI)):
-        sys.exit("effectcraft-cli not found: put it on PATH or set EFFECTCRAFT_CLI to its full path")
+        sys.exit("effectcraft-cli not found: ask the user where EffectCraft is, then `python scripts/ec_cli.py --set PATH`")
     if len(a) >= 3 and a[2] == "open":
         app = os.path.join(os.path.dirname(CLI), "effectcraft.exe" if os.name == "nt" else "effectcraft")
         if not os.path.exists(app):

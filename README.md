@@ -12,7 +12,7 @@ composite characters into photos, render photoreal 3D sets, and deliver in any f
 [![License: MIT](https://img.shields.io/badge/license-MIT-2ea44f)](LICENSE)
 [![Version](https://img.shields.io/badge/version-0.4.0-1f6feb)](CHANGELOG.md)
 [![EffectCraft](https://img.shields.io/badge/tested%20on-EffectCraft%200.16.0-0b2a5b)](tests/RESULTS.md)
-[![Tests](https://img.shields.io/badge/tests-60%20passing-2ea44f)](tests/RESULTS.md)
+[![Tests](https://img.shields.io/badge/tests-62%20passing-2ea44f)](tests/RESULTS.md)
 [![Blender](https://img.shields.io/badge/Blender-5.0%20(optional)-e87d0d)](scripts/blender)
 
 [Quickstart](#-quickstart) · [What it does](#-what-it-does) · [How it works](#-how-it-works) · [Toolbox](#-toolbox) · [Compare](#-how-it-compares) · [Docs](#-docs)
@@ -52,15 +52,18 @@ cd ~/.claude/skills/effectcraft-editor
 # 2. Python tools
 pip install opencv-python numpy pillow pytest certifi
 
-# 3. check the machine (EffectCraft, ffmpeg, Blender, voices) — prints the fix for anything missing
+# 3. find EffectCraft (or save its path once: python scripts/ec_cli.py --set /path/to/effectcraft-cli)
+python scripts/ec_cli.py
+
+# 4. check the machine (ffmpeg, Blender, voices) — prints the fix for anything missing
 python scripts/doctor.py
 
-# 4. prove it works here
+# 5. prove it works here
 python -m pytest tests -q
 ```
 
 You need **Python 3.10+**, **ffmpeg/ffprobe** on PATH and **[EffectCraft](https://github.com/storytold/effectcraft/releases)**
-(put `effectcraft-cli` on PATH or set `EFFECTCRAFT_CLI`). Blender is optional (photoreal sets).
+(found automatically in the usual folders; your agent asks you for the path if not). Blender is optional (photoreal sets).
 Per-OS steps and MCP setup: [`references/setup.md`](references/setup.md).
 
 ## ✨ What it does
@@ -174,7 +177,7 @@ From a real reel recreation (logs from the project, not rerun for this repo):
 
 On a second reel, `framemetrics.py` picked out the weakest stretch on its own (f174–179, a macro push that stops short) —
 the same shot a separate AI review flagged — and `audio.py` read the music at **139.7 BPM** with 26 of 47 cuts on a beat.
-Test runs: [`tests/RESULTS.md`](tests/RESULTS.md) (60 passing on EffectCraft 0.16.0; 0.14.0 and 0.16.0 render bit-identical).
+Test runs: [`tests/RESULTS.md`](tests/RESULTS.md) (62 passing on EffectCraft 0.16.0; 0.14.0 and 0.16.0 render bit-identical).
 
 ## 🧰 Toolbox
 

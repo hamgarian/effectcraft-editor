@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.1 — 2026-10-23
+- `scripts/ec_cli.py` finds EffectCraft's CLI (EFFECTCRAFT_CLI, PATH, install folders on Windows/macOS/Linux, unpacked zips in Downloads/Desktop/Documents), checks each copy runs, prefers the saved one, else the newest; `--set PATH` validates and saves EFFECTCRAFT_CLI for the user. SKILL.md: if nothing (or only an old copy) is found, ask the user for the path and save it.
+- export.py, render_seq.py, doctor.py and the engine tests use the same finder.
+
 ## 0.4.0 — 2026-10-23
 Footage editing.
 - `jsx/footage.jsx`: placeClip, assemble (cut lists; crossfade, dip, whip, zoom, slide, glitch), slip, setSpeed, speedRamp, freezeFrame, reverseClip, jCut / lCut, audioFade, duck, punchIn, kenBurns, pip, splitScreen, applyReframe, matchColor, look, filmLook, timecodeBurn.

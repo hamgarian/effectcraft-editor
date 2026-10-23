@@ -47,11 +47,15 @@ for mod, pip in (("cv2", "opencv-python"), ("numpy", "numpy"), ("PIL", "pillow")
 for tool in ("ffmpeg", "ffprobe"):
     v = ver([tool, "-version"])
     row(tool, v is not None, v or "not on PATH", "install ffmpeg (ffmpeg.org; brew install ffmpeg; apt install ffmpeg) and put it on PATH")
-cli = os.environ.get("EFFECTCRAFT_CLI") or shutil.which("effectcraft-cli")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from ec_cli import find_cli  # noqa: E402
+
+cli = find_cli()   # EFFECTCRAFT_CLI, PATH, usual install folders, unpacked zips in Downloads/Desktop/Documents
 v = ver([cli, "info"]) if cli else None
-row("effectcraft-cli", v is not None, (cli + " -> " + v) if v else "not found",
-    "install EffectCraft (github.com/storytold/effectcraft/releases); Windows: the CLI sits next to effectcraft.exe; "
-    "macOS/Linux: a separate effectcraft-cli download. Put it on PATH or set EFFECTCRAFT_CLI")
+saved = os.environ.get("EFFECTCRAFT_CLI")
+row("effectcraft-cli", v is not None, (cli + " -> " + v + ("" if saved else "  (found by search: save it with ec_cli.py --set)")) if v else "not found",
+    "ask the user where EffectCraft is (the folder with effectcraft-cli), or install it from "
+    "github.com/storytold/effectcraft/releases; then: python scripts/ec_cli.py --set <path>")
 b = find_blender()
 row("blender", (b is not None) or None, b or "not found (optional: photoreal 3D sets)", "install Blender 4.2+ or set BLENDER=path")
 for opt_tool, why in (("piper", "local TTS (optional)"), ("whisper", "caption timing from speech (optional)")):

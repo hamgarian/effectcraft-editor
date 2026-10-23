@@ -1,11 +1,13 @@
-# Test results (v0.4.0, 2026-10-23)
+# Test results (v0.4.1, 2026-10-23)
 
 Run from a clean copy, Windows 11, Python 3.13, EffectCraft **0.16.0** portable (`EFFECTCRAFT_CLI` set),
 Blender 5.0, Windows SAPI voices. The v0.3.0 suite (38 tests) also passed on EffectCraft 0.14.0.
 
 ```
 python -m pytest tests -q
-60 passed in 134.85s
+62 passed, 1 skipped in 115.54s
+  test_ec_cli.py   finds a CLI from EFFECTCRAFT_CLI, refuses a non-working path, saves it (dry run on Windows);
+                   the "not found" case skips here because Windows always exposes the real Program Files install
   test_tools.py    measurement, style map, joins, ledger, doctor, cut-outs, titles, Blender shadow set
   test_audio.py    beats (120 BPM click track), SFX + mix + mux + cut sync, sync offset, captions, TTS
   test_footage.py  VFR conform, scene cut at 2.00 s, silences, beat montage, colour match + LUT, reframe follows, loudness

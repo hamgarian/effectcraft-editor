@@ -12,9 +12,18 @@ your plan) and fix what the numbers flag. Tested on EffectCraft 0.16.0 and 0.14.
 Read `references/quirks.md` and `references/operating.md` before writing a script: most first-render bugs are
 engine quirks listed there.
 
+## Before the first build on a machine
+
+Run `python scripts/ec_cli.py`. It looks for `effectcraft-cli` (the `EFFECTCRAFT_CLI` variable, PATH, the usual
+install folders, unpacked zips in Downloads/Desktop/Documents) and prints the path and version it will use
+(`--all` lists every copy; several versions are common). If it says NOT FOUND, or found only an old copy, **ask the
+user** where EffectCraft is installed (or to install it from github.com/storytold/effectcraft/releases), then save it
+for every later session with `python scripts/ec_cli.py --set <path to effectcraft-cli>`; it checks the file runs
+before saving. All scripts below use the same finder.
+
 ## Tools
 
-- **EffectCraft CLI** (`effectcraft-cli`; set `EFFECTCRAFT_CLI` if not on PATH): `script build.jsx --empty` builds,
+- **EffectCraft CLI** (`effectcraft-cli`, located by `scripts/ec_cli.py`): `script build.jsx --empty` builds,
   `render-frame --project P --comp C --frame N --out f.png` renders one frame, `commands --filter X` and
   `exec effect.list --params "{\"filter\":\"X\"}"` list commands and effects with their parameters. It also ships an
   MCP server (`effectcraft-cli mcp`). See `references/operating.md`.
@@ -37,6 +46,7 @@ engine quirks listed there.
 |---|---|
 | `bundle.py IN.jsx OUT.jsx` | inlines `#include` lines so the headless CLI can run it |
 | `bracecheck.py X.jsx` | unbalanced braces, or a `//` comment that swallows the rest of a line; run before every build |
+| `ec_cli.py [--all] [--set PATH]` | find EffectCraft's CLI (or save the path the user gives as `EFFECTCRAFT_CLI`) |
 | `doctor.py` | what's installed and missing, with the fix and the MCP line (`references/setup.md`) |
 | `render_seq.py PROJECT COMP FRAMES OUT.mp4 [--fps 20]` | one process per frame (batch render runs out of memory), resumes, retries, then encodes; any OS (`render_seq.ps1` is the Windows original) |
 | `ledger.py status / verify` | what ran on which inputs; unfinished runs flagged UNKNOWN; outputs changed since |

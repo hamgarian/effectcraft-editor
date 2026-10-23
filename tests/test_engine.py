@@ -1,7 +1,6 @@
 ﻿"""Tests that need a real EffectCraft (skipped without one; set EFFECTCRAFT_CLI). Run: python -m pytest tests -q"""
 import json
 import os
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -11,8 +10,11 @@ import numpy as np
 import pytest
 
 R = Path(__file__).resolve().parent.parent
-CLI = os.environ.get("EFFECTCRAFT_CLI") or shutil.which("effectcraft-cli")
-pytestmark = pytest.mark.skipif(not CLI, reason="EffectCraft CLI not found (set EFFECTCRAFT_CLI)")
+sys.path.insert(0, str(R / "scripts"))
+from ec_cli import find_cli  # noqa: E402
+
+CLI = find_cli()
+pytestmark = pytest.mark.skipif(not CLI, reason="EffectCraft CLI not found (python scripts/ec_cli.py --set PATH)")
 
 
 def build(jsx, cwd):

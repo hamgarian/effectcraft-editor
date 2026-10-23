@@ -7,7 +7,9 @@ Download from the [EffectCraft releases](https://github.com/storytold/effectcraf
 - **Windows**: the portable zip or the installer; `effectcraft-cli.exe` sits next to `effectcraft.exe` (not on PATH).
 - **macOS**: the app image holds the app; the CLI is a separate download (`effectcraft-cli-*-macos-*.zip`). Unzip it, clear quarantine (`xattr -dr com.apple.quarantine effectcraft-cli`).
 - **Linux**: use the deb, rpm or tar.gz (an AppImage holds only the app). Headless servers without a GPU need Vulkan software drivers (e.g. mesa-vulkan-drivers).
-Then put the CLI on PATH or `export EFFECTCRAFT_CLI=/full/path/effectcraft-cli` (PowerShell: `$env:EFFECTCRAFT_CLI = "..."`).
+Then `python scripts/ec_cli.py` finds it (env var, PATH, install folders, unpacked zips in Downloads/Desktop/Documents).
+If it doesn't, or picks an old copy, save the right one: `python scripts/ec_cli.py --set <path to effectcraft-cli>`
+(a Windows user environment variable, or an `export` line in `~/.zshrc` / `~/.bashrc`; open a new terminal afterwards).
 A blank or crashing window on start: try `WGPU_BACKEND=vulkan` (or `dx12` on Windows) for one launch.
 
 ## Python and tools
