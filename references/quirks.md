@@ -1,7 +1,8 @@
-# EffectCraft scripting quirks (0.14.0)
+# EffectCraft scripting quirks (0.14.0, re-checked on 0.16.0)
 
 Each one caused a visible bug in a real build. "Verified" = reproduced by `tests/repro_quirks.jsx` on
-0.14.0 (output in `tests/RESULTS.md`); the rest were seen during builds and fixed by the workaround shown.
+0.14.0 and still present on 0.16.0 (output in `tests/RESULTS.md`); the rest were seen during builds and fixed by
+the workaround shown.
 
 | Quirk | Workaround |
 |---|---|

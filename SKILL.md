@@ -8,7 +8,7 @@ metadata:
 # effectcraft-editor
 
 Build edits as a JSX script you can rerun, render frames headless, then measure against the reference (or against
-your plan) and fix what the numbers flag. Tested on EffectCraft 0.14.0 (Windows x64 portable) and Blender 5.0.
+your plan) and fix what the numbers flag. Tested on EffectCraft 0.16.0 and 0.14.0 (Windows x64 portable; identical renders) and Blender 5.0.
 Read `references/quirks.md` and `references/operating.md` before writing a script: most first-render bugs are
 engine quirks listed there.
 

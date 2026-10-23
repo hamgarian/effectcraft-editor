@@ -1,4 +1,4 @@
-// Core helpers for EffectCraft build scripts (tested on EffectCraft 0.14.0, `effectcraft-cli script X.jsx --empty`).
+// Core helpers for EffectCraft build scripts (tested on EffectCraft 0.14.0 and 0.16.0, `effectcraft-cli script X.jsx --empty`).
 // Headless scripts cannot #include: paste this in, or bundle with scripts/bundle.py.
 // Set FPS, W, H before use.
 var FPS = 20, W = 1080, H = 1080;

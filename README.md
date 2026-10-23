@@ -1,77 +1,255 @@
-<p align="center"><img src="logo.svg" width="96" alt=""></p>
+<div align="center">
 
-# effectcraft-editor `v0.3.0`
+<img src="logo.svg" width="120" alt="effectcraft-editor logo">
 
-**Result:** on one reel recreation these tools took the measured gaps to the reference down. Grid camera zoom went from 0.45x to 0.71x (ref 0.70x), a dive from 0.85x to 1.00x (ref 1.00x), intro letterbox from 0 to 104 px (ref 104 px), and frames flagged for wrong brightness from 18 to 0. On a second reel, `framemetrics.py` named the worst stretch on its own (f174-179, a CD macro push that stops short), which a separate AI review of the same render had also flagged; `audio.py` read that reel's music at 139.7 BPM and found 26 of 47 cuts on a beat or hit.
-These measurements and the review come from the project's build and review logs, which aren't in this repo and weren't rerun. The tests that were run are in `tests/RESULTS.md`.
+# effectcraft-editor
 
-An agent skill for making motion-design edits in EffectCraft (the open-source, After Effects-like compositor):
-build with a JSX script, render headless, then **measure** cuts, camera moves, exposure, beats, exposed edges,
-one-frame glitches and per-frame structure against a reference, and fix what the numbers flag. It also covers
-original edits (director mode, a reference's style as a beat table, templates), sound (beats, effects, mix),
-captions and narration, social formats, every EffectCraft export, tracking, compositing, and photoreal Blender sets.
+**An agent skill that makes motion-design edits in [EffectCraft](https://github.com/storytold/effectcraft) — and checks them with numbers, not vibes.**
 
-<p align="center"><img src="docs/templates.png" alt="The six templates rendered headless by the test suite, including an .ectemplate re-rendered with new values"></p>
+Recreate a reel shot for shot, cut an original edit to the beat, drop in titles and lower thirds,
+composite characters into photos, render photoreal 3D sets, and deliver in any format.
 
-It came out of recreating two motion-design reels with original art. The rules in `references/rules.md` and the
-quirks in `references/quirks.md` come from misses that a human reviewer caught or that broke a render.
+[![License: MIT](https://img.shields.io/badge/license-MIT-2ea44f)](LICENSE)
+[![Version](https://img.shields.io/badge/version-0.3.0-1f6feb)](CHANGELOG.md)
+[![EffectCraft](https://img.shields.io/badge/tested%20on-EffectCraft%200.16.0-0b2a5b)](tests/RESULTS.md)
+[![Tests](https://img.shields.io/badge/tests-38%20passing-2ea44f)](tests/RESULTS.md)
+[![Blender](https://img.shields.io/badge/Blender-5.0%20(optional)-e87d0d)](scripts/blender)
 
-## How it compares
+[Quickstart](#-quickstart) · [What it does](#-what-it-does) · [How it works](#-how-it-works) · [Toolbox](#-toolbox) · [Compare](#-how-it-compares) · [Docs](#-docs)
 
-This is a guide, not a discovery. Checked 2026-10-23 from each project's README, skill files and file list (none run).
+<br>
 
-| | this repo | [Pluviobyte/video-production-skills](https://github.com/Pluviobyte/video-production-skills) | [full-aigc-skills/effectcraft-skills](https://github.com/full-aigc-skills/effectcraft-skills) | [Vinciux99/effectcraft-claude-skill](https://github.com/Vinciux99/effectcraft-claude-skill) | [jhonsu01/effectcraft-mcp-server](https://github.com/jhonsu01/effectcraft-mcp-server) |
-|---|---|---|---|---|---|
-| engine | EffectCraft + Blender | HyperFrames / Remotion | EffectCraft | EffectCraft | EffectCraft (MCP) |
-| recreate a reference, every-frame metrics | yes (+ camera per shot, codec baseline, joins) | yes (MAE/PSNR/SSIM, joins, codec baseline) | no | no | no |
-| fidelity levels, contract, component catalog | yes | yes | delivery checks | no | no |
-| original edit: director / reference style | beat table, slideshow check, `stylemap.py` | motion director | genre skills | no | no |
-| templates with controls | 6 + `.ectemplate` export | 2 genre skills | 8 genre skills | no | 8 built-in + `.ectemplate` |
-| music: beats, cut sync, SFX, mix | yes (`audio.py`) | typing SFX in one opener | no | no | audio layers |
-| captions, narration, stock search | yes (SRT/VTT/burn-in, offline TTS, Commons) | no | no | no | no |
-| formats + exports (alpha, ProRes, WebM, GIF, Lottie, timelines) | yes, verified after export | MP4 | yes | recipes | yes |
-| tracking, masks, expressions | helpers (`trackAttach`, `mask`, `expr`) | n/a | skills | recipes | expressions |
-| compositing + photoreal 3D rules | yes | no | screen composite | no | no |
-| setup / doctor / MCP | `doctor.py`, `references/setup.md` | n/a | pinned installer | setup scripts | installer |
-| crash recovery | run ledger (`ledger.py`), resumable renders | no | task ledger + recovery | no | no |
+<img src="docs/templates.png" width="860" alt="Six motion templates rendered headless by the test suite: lower third, the same lower third re-rendered from an .ectemplate with new text, title card, logo reveal, kinetic type, 3D text orbit">
 
-Ideas taken from them, written fresh: fidelity levels, a written contract, every-frame approval, codec baselines,
-join checks and a component catalog (Pluviobyte); save-reopen-decode delivery, timeouts as unknown, never
-substituting a similar-named effect, genre templates, a run ledger (full-aigc); discovery commands, layer vs comp
-time, alpha and Windows traps, MCP setup (Vinciux99, MIT, adapted in `references/operating.md` and `setup.md`);
-templates as `.ectemplate` with controls (jhonsu01); starting from a reference's style (OpenMontage). No code or text
-was copied. full-aigc's set also has a skill named `effectcraft-editor` (an embedded-editor launcher): install one of
-them under a different folder name.
+<sub>Six templates rendered headless by the test suite. The second panel is the lower third exported as an <code>.ectemplate</code> and re-rendered with new text — no script.</sub>
 
-## Quickstart
+</div>
 
-Needs Python 3.10+, ffmpeg and ffprobe on PATH, and [EffectCraft](https://github.com/storytold/effectcraft/releases)
-(its CLI, `effectcraft-cli`: put it on PATH or set `EFFECTCRAFT_CLI`). Optional: Blender (photoreal sets), Piper or
-espeak (narration on Linux; Windows and macOS voices are built in). `references/setup.md` has per-OS steps.
+---
+
+## 💬 Try saying
+
+> *"Recreate this reel in EffectCraft, down to the camera moves."*
+>
+> *"Make a 15-second vertical edit in the style of this video, cut to this song."*
+>
+> *"Add a lower third for each speaker and export ProRes with alpha for my editor."*
+>
+> *"This shot looks like a PNG pasted on a photo — fix the compositing."*
+
+The skill tells your agent how to plan the edit, which EffectCraft quirks to avoid, which tool measures what,
+and when to stop tuning and rebuild a shot instead.
+
+## ⚡ Quickstart
 
 ```bash
-git clone https://github.com/hamgarian/effectcraft-editor && cd effectcraft-editor
+# 1. get the skill (Claude Code loads skills from ~/.claude/skills)
+git clone https://github.com/hamgarian/effectcraft-editor ~/.claude/skills/effectcraft-editor
+cd ~/.claude/skills/effectcraft-editor
+
+# 2. Python tools
 pip install opencv-python numpy pillow pytest certifi
+
+# 3. check the machine (EffectCraft, ffmpeg, Blender, voices) — prints the fix for anything missing
 python scripts/doctor.py
+
+# 4. prove it works here
 python -m pytest tests -q
 ```
 
-Engine tests run when `EFFECTCRAFT_CLI` is set, the Blender test when Blender is found; both skip otherwise.
-Copy the folder to where your agent loads skills (Claude Code: `~/.claude/skills/effectcraft-editor`).
+You need **Python 3.10+**, **ffmpeg/ffprobe** on PATH and **[EffectCraft](https://github.com/storytold/effectcraft/releases)**
+(put `effectcraft-cli` on PATH or set `EFFECTCRAFT_CLI`). Blender is optional (photoreal sets).
+Per-OS steps and MCP setup: [`references/setup.md`](references/setup.md).
 
-## What's inside
+## ✨ What it does
 
-- `SKILL.md`: the workflow (contract, study, assets + audio, build, render, measure, loop, approve) and the tool table.
-- `references/`: `rules.md` (compositing, 3D, assets, motion), `quirks.md` (EffectCraft 0.14), `operating.md` (commands, MCP, traps), `fidelity.md`, `report-template.md`, `components.md` (templates + proven motions), `director.md` (original edits, reference style), `audio.md`, `formats.md`, `assets.md`, `setup.md`.
-- `jsx/helpers.jsx` (build helpers, compositing, tracking, captions) and `jsx/templates.jsx` (six templates, Essential Graphics controls, formats and safe areas).
-- `scripts/`: measurement, audio, export, captions, narration, style map, render, ledger and setup tools; `scripts/blender/` for photoreal sets.
+<table>
+<tr>
+<td width="50%" valign="top">
 
-## Limits
+**🎯 Match a reference**<br>
+Study it frame by frame, then measure your render against it: cut timing, camera zoom/roll/pan per shot,
+brightness, beats, exposed edges, one-frame glitches, per-frame MAE/SSIM, frames that lead or lag.
+Claims are capped by [fidelity levels](references/fidelity.md) — no "pixel perfect" without proof.
 
-- Tested on EffectCraft 0.14.0 and Blender 5.0, Windows x64. macOS/Linux steps follow the EffectCraft docs but weren't run here.
-- With original art, absolute MAE/PSNR/SSIM are not pass marks; use them for cuts, lead/lag and worst frames, and to compare rounds.
-- `camtrack.py` and `stylemap.py` read big foreground motion as camera motion; trust them where the background dominates.
-- Beat detection is a spectral-flux tracker without ML: fine for pop/electronic, weaker on rubato or ambient music.
-- Safe-area margins are commonly used values, not platform specs. No CapCut/JianYing draft export (use FCP XML / OTIO).
+</td>
+<td width="50%" valign="top">
 
-MIT licence.
+**🎬 Direct an original edit**<br>
+One moving idea, a beat table where every beat changes state, a slideshow check.
+Like a video's *style*? `stylemap.py` turns it into a shot-by-shot plan — rhythm, camera, palette — for new content.
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+**🎵 Cut to the music**<br>
+Tempo, beats and hits from any track; original sound effects (whoosh, impact, riser, click…);
+mix, mux, and a check that cuts land on beats and the audio is in sync.
+
+</td>
+<td valign="top">
+
+**🧩 Templates with controls**<br>
+Lower third, title card, logo reveal, kinetic type, 3D text orbit, social reframe — each exportable as an
+`.ectemplate` that renders new text from a JSON file.
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+**🧪 Compositing that holds up**<br>
+Cut-outs graded into the plate with light wrap, backlit shading and real shadows; motion tracking,
+masks and expressions as one-line helpers.
+
+</td>
+<td valign="top">
+
+**🧊 Photoreal 3D sets**<br>
+Headless Blender (Cycles, HDRI, sun, off-screen shadow casters, smudged glass, screens that take shadow),
+rendered and placed back in the edit — for when "make it a real 3D scene" is the note.
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+**📦 Deliver anywhere**<br>
+MP4, ProRes 4444 + alpha, WebM + alpha, GIF, RGBA PNG, Lottie, and editable timelines for
+Premiere, Resolve and Final Cut — each file verified after export. Vertical/square formats with safe areas.
+
+</td>
+<td valign="top">
+
+**🗣️ Captions & narration**<br>
+Timed captions (SRT, VTT, burned-in) from a script, the beat, or Whisper; offline narration with built-in voices;
+stock stills/video from Wikimedia Commons with licences attached.
+
+</td>
+</tr>
+</table>
+
+## 🔁 How it works
+
+```mermaid
+flowchart LR
+    A[Reference or brief] --> B[Study<br/>frame by frame, beats]
+    B --> C[Plan<br/>shots, assets, audio, format]
+    C --> D[Build<br/>one JSX script]
+    D --> E[Render<br/>headless, resumable]
+    E --> F[Measure<br/>cuts, camera, beats, frames]
+    F -->|numbers off| G[Fix the earliest<br/>failing frame]
+    G --> D
+    F -->|gates green| H[Deliver<br/>verified exports]
+```
+
+Every edit is a script you can rerun, so a fix is a code change, not a pile of manual tweaks. When tuning stops
+moving the numbers for two rounds, the skill says to **rebuild the shot's structure** instead.
+
+## 📊 Proof
+
+From a real reel recreation (logs from the project, not rerun for this repo):
+
+| | before | after | reference |
+|---|---|---|---|
+| grid camera zoom | 0.45x | **0.71x** | 0.70x |
+| dive camera zoom | 0.85x | **1.00x** | 1.00x |
+| intro letterbox | 0 px | **104 px** | 104 px |
+| frames flagged for wrong brightness | 18 | **0** | — |
+
+On a second reel, `framemetrics.py` picked out the weakest stretch on its own (f174–179, a macro push that stops short) —
+the same shot a separate AI review flagged — and `audio.py` read the music at **139.7 BPM** with 26 of 47 cuts on a beat.
+Test runs: [`tests/RESULTS.md`](tests/RESULTS.md) (38 passing on EffectCraft 0.16.0; 0.14.0 and 0.16.0 render bit-identical).
+
+## 🧰 Toolbox
+
+<details>
+<summary><b>Measure</b> — compare a render with a reference</summary>
+
+| Script | Answers |
+|---|---|
+| `probe.py` | same size, fps, frame count, duration? (+ SHA-256 of deliveries) |
+| `framestudy.py` | labelled frame grids, letterbox size, eyedropper colours |
+| `framecmp.py` | cut times and brightness/colour per 0.5 s |
+| `framemetrics.py` | every frame: MAE/PSNR/SSIM, worst frames, cut boundaries, lead/lag, codec noise floor |
+| `camtrack.py` | camera zoom / roll / pan per shot |
+| `glitchfind.py` · `edgeblack.py` · `joincheck.py` | one-frame pops · black borders · bad seams after re-renders |
+
+</details>
+
+<details>
+<summary><b>Make</b> — audio, assets, captions, style</summary>
+
+| Script | Does |
+|---|---|
+| `audio.py` | beats & hits, SFX bank, mix, mux, cut-to-beat check, loudness/sync check |
+| `stylemap.py` | a reference's shots, camera, palette and energy as a beat table |
+| `captions.py` · `tts.py` | timed SRT/VTT/JSX captions · offline narration |
+| `title_art.py` · `cutwhite.py` · `stock.py` | titles on generated art · clean cut-outs · licensed stock search |
+| `blender/` | photoreal sets (`kit.py`, `phone_on_desk.py`) |
+
+</details>
+
+<details>
+<summary><b>Build & ship</b> — scripts, rendering, delivery</summary>
+
+| File | Does |
+|---|---|
+| `jsx/helpers.jsx` | keys with measured eases, safe property lookup, strict effects, masks, expressions, tracking, captions, compositing |
+| `jsx/templates.jsx` | six templates, Essential Graphics controls, formats and safe areas |
+| `bundle.py` · `bracecheck.py` · `fxprobe.jsx` | inline includes · catch comment-eaten braces · check effect names |
+| `render_seq.py` | one frame per process, resumable, any OS |
+| `export.py` | 12 delivery presets, each verified |
+| `doctor.py` · `ledger.py` | setup check · run ledger for crash recovery |
+
+</details>
+
+## 🆚 How it compares
+
+<details>
+<summary>Feature comparison with other EffectCraft and video-agent skills (checked 2026-10-23 from their READMEs and skill files, not run)</summary>
+
+| | **this skill** | [Pluviobyte](https://github.com/Pluviobyte/video-production-skills) | [full-aigc](https://github.com/full-aigc-skills/effectcraft-skills) | [Vinciux99](https://github.com/Vinciux99/effectcraft-claude-skill) | [jhonsu01](https://github.com/jhonsu01/effectcraft-mcp-server) |
+|---|---|---|---|---|---|
+| engine | EffectCraft + Blender | HyperFrames / Remotion | EffectCraft | EffectCraft | EffectCraft (MCP) |
+| reference recreation + every-frame metrics | ✅ + camera per shot | ✅ | — | — | — |
+| fidelity levels, report, motion catalog | ✅ | ✅ | delivery checks | — | — |
+| original edits / reference style | ✅ | ✅ | genre skills | — | — |
+| templates with controls | ✅ 6 | 2 | 8 | — | ✅ 8 |
+| beats, cut sync, SFX, mix | ✅ | partial | — | — | audio layers |
+| captions, narration, stock | ✅ | — | — | — | — |
+| exports incl. alpha, Lottie, timelines | ✅ verified | MP4 | ✅ | recipes | ✅ |
+| tracking, masks, expressions | ✅ | n/a | ✅ | recipes | expressions |
+| compositing & photoreal 3D rules | ✅ | — | screen composite | — | — |
+| setup check, crash recovery | ✅ | — | ✅ | setup scripts | installer |
+
+Ideas from these projects were rewritten, not copied — see [`CHANGELOG.md`](CHANGELOG.md).
+full-aigc's set also has a skill named `effectcraft-editor`; install one of them under another folder name.
+
+</details>
+
+## 📚 Docs
+
+| Read | When |
+|---|---|
+| [`SKILL.md`](SKILL.md) | the workflow your agent follows |
+| [`references/rules.md`](references/rules.md) | compositing, 3D, assets, motion — rules learned from real misses |
+| [`references/quirks.md`](references/quirks.md) | EffectCraft scripting traps and their workarounds |
+| [`references/director.md`](references/director.md) · [`audio.md`](references/audio.md) · [`formats.md`](references/formats.md) · [`assets.md`](references/assets.md) | planning an edit, music, delivery, art |
+| [`references/fidelity.md`](references/fidelity.md) · [`components.md`](references/components.md) · [`report-template.md`](references/report-template.md) | what you may claim, proven motions, the running report |
+| [`references/operating.md`](references/operating.md) · [`setup.md`](references/setup.md) | driving EffectCraft from an agent, installing |
+
+## ⚠️ Limits
+
+- Tested on Windows x64 (EffectCraft 0.16.0 and 0.14.0, Blender 5.0). macOS/Linux steps follow EffectCraft's docs but weren't run.
+- EffectCraft can't load After Effects plug-ins (`.aex`); AE `.jsx` scripts mostly run.
+- With original art, MAE/SSIM aren't pass marks — use them for cuts, lead/lag and worst frames.
+- Beat detection is a classic spectral-flux tracker: great for pop/electronic, weaker on rubato or ambient music.
+- Safe areas are common margins, not platform specs. No CapCut draft export (use FCP XML / OTIO).
+
+## 📄 License
+
+[MIT](LICENSE). Originated in a series of reel recreations with original art; no third-party characters, logos,
+lyrics or music are included.

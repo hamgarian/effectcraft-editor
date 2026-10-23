@@ -3,7 +3,7 @@
 Engine facts and traps for driving EffectCraft through its CLI or MCP server. Parts adapted from
 [Vinciux99/effectcraft-claude-skill](https://github.com/Vinciux99/effectcraft-claude-skill) (MIT) and ideas from
 [full-aigc-skills/effectcraft-skills](https://github.com/full-aigc-skills/effectcraft-skills) (Apache-2.0); checked
-here against EffectCraft 0.14.0 where marked.
+here against EffectCraft 0.14.0 and 0.16.0 where marked.
 
 ## Discover, don't guess
 - Commands and their parameters: `effectcraft-cli commands --filter <word>` (add `--json`). Unknown keys are rejected and the error lists the accepted ones.
