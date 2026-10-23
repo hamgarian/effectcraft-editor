@@ -17,7 +17,11 @@ Each one caused a visible bug in a real build. "Verified" = reproduced by `tests
 | Motion blur on hold-key jumps and 2-frame scale slams produces double images. | Leave those layers out of motion blur. |
 | Camera Lens Blur with a Blur Map renders the map layer even when the map layer is disabled. | Depth-of-field band: an adjustment layer with Gaussian blur and a LUMA track matte of the band map (white = blur). |
 | Keying white (`colorkey=0xFFFFFF`) on a white object deletes the object. | Put a white shape under the cut-out, or generate on a contrasting background. |
-| A `//` comment after `{` on a one-line block comments out the closing braces; a `//` inside an open `(` or `[` eats the rest of the expression. | Comments on their own line; `bracecheck.py` before every build. |
+| A `//` comment after `{` on a one-line block comments out the closing braces; a `//` inside an open `(` or `[` eats the rest of the expression. | Comments on their own line; `bracecheck.py` before every build. The same happens when an agent inserts a note mid-line in a Python set script (`# note` hid a material assignment: blank white screen). Comments only at the end of a finished line. |
+| An effect name that doesn't resolve fails silently: `fx()` logs one line among hundreds and the build "succeeds". `"ADBE Hue/Saturation"` matched nothing for several rounds. Verified. | Names from `exec effect.list`; `fxCheck()` at the end of the build throws on any failure; `scripts/fxprobe.jsx` shows what a name resolves to. |
+| A thin shape scaled by thousands of percent (a 20 px drape at 9000% X) clips at a raster size limit: only part of it renders. | Draw the shape at its real size and scale less (500%). |
+| A Linear Wipe on a text layer wipes the text BOX, which is wider than the ink, so a write-on appears late. | Start the wipe before the layer's visible start (e.g. 0.25 s early). |
+| `render-frame` output is RGB. | For alpha, render an RGBA PNG sequence with `render`. |
 
 ## Effects seen working in 0.14.0
 
@@ -26,4 +30,8 @@ ADBE Venetian Blinds, ADBE Radio Waves, CC Scatterize, Turbulent Displace, Poste
 Tint, Fill, Find Edges, Tritone, Mosaic, Roughen Edges, Gaussian Blur 2, Ramp, CC Ball Action (halftone),
 CC Page Turn, Fractal Noise, native stroke dashes (`ADBE Vector Stroke Dashes` > Dash 1 / Gap 1).
 
-Not available: Color Halftone, Gradient Map, Write-on (use a Linear Wipe on the text layer).
+Also resolving in 0.14.0 (`fxprobe.jsx`): Hue/Saturation, Color Balance, Photo Filter, Exposure, Minimax, Matte Choker,
+Simple Choker, Glow, Vibrance, Black & White, Channel Blur, Set Matte, Shift Channels, Curves, Color Balance (HLS).
+
+Not available: Color Halftone, Gradient Map, Write-on (use a Linear Wipe on the text layer), Light Wrap / CC Light Wrap
+(build it: `compositeCutout()`).

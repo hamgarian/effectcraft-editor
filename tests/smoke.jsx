@@ -27,4 +27,20 @@ var before = main.numLayers;
 infiniteBackground(main, { ShotA: "#ff0000", flash: "#000000" });
 check(main.numLayers == before + 1, "one fill (shot only, not overlay): got " + (main.numLayers - before));
 
+// compositeCutout: plate, cast, contact, cut-out, shade + its alpha matte, wrap + its luma matte = 8 layers, mattes set
+var plate = comp("plate", 2, "#506070"), cut = comp("cut", 2, null, 200, 400);
+cut.layers.addSolid([0.9, 0.2, 0.2], "body", 120, 300, 1);
+var cc = comp("composite", 2, null);
+var kid = compositeCutout(cc, plate, cut, [540, 500]);
+check(cc.numLayers == 8, "compositeCutout layers: got " + cc.numLayers);
+var mattes = 0; for (var mi = 1; mi <= cc.numLayers; mi++) { try { if (cc.layer(mi).trackMatteType != TrackMatteType.NO_TRACK_MATTE) mattes++; } catch (e) {} }
+check(mattes == 2, "compositeCutout track mattes: got " + mattes);
+check(kid.property("Effects").numProperties == 4, "cut-out grade effects (hue/sat, levels, blur, noise): got " + kid.property("Effects").numProperties);
+
+// every effect used so far must have resolved; then a bogus name must be caught by fxCheck()
+check(FX_FAILS.length == 0, "effect failures: " + FX_FAILS.join("; "));
+fx(sl, "ADBE Hue/Saturation", {});
+var caught = false; try { fxCheck(); } catch (e) { caught = true; }
+check(caught, "fxCheck must throw on an unresolved effect name");
+
 writeLn(fails.length ? "SMOKE FAIL: " + fails.join("; ") : "SMOKE OK");

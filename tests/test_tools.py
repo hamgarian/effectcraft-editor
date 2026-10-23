@@ -114,6 +114,67 @@ def test_bundle_inlines_and_detects_cycle(tmp_path):
     assert "include cycle" in (r.stdout + r.stderr)
 
 
+def test_framemetrics_flags_lag_cut_and_worst(vids, tmp_path):
+    # mine = ref delayed by 2 frames over the push-in; the flat grey section after the cut is too dark
+    out = run("framemetrics.py", vids / "ref.mp4", vids / "mine.mp4", "--out", tmp_path / "m")
+    summary = json.loads(out.splitlines()[0])
+    assert summary["ref_cuts"] == [25], summary
+    assert summary["max_mae"] > 100  # grey 200 vs 60
+    assert (tmp_path / "m" / "worst.png").exists() and (tmp_path / "m" / "metrics.json").exists()
+    lagged = zoom_frames(25, 1.3, texture())
+    write(tmp_path / "lag.mp4", lagged[:2] + lagged[:-2])
+    out2 = run("framemetrics.py", vids / "ref.mp4", tmp_path / "lag.mp4", "--count", "20")
+    assert json.loads(out2.splitlines()[0])["temporal_mismatches"] > 10, out2
+
+
+def test_probe_locks_and_flags(vids):
+    out = run("probe.py", vids / "ref.mp4", vids / "ref.mp4", "--sha", vids / "ref.mp4")
+    assert "timebase: LOCKED" in out and "sha256 " in out
+    write(vids / "short.mp4", zoom_frames(10, 1.0, texture()))
+    assert "mismatch" in run("probe.py", vids / "ref.mp4", vids / "short.mp4")
+
+
+def test_cutwhite_keeps_inner_white(tmp_path):
+    img = np.full((120, 120, 3), 255, np.uint8)
+    cv2.circle(img, (60, 60), 40, (0, 0, 200), -1)
+    cv2.circle(img, (60, 60), 12, (255, 255, 255), -1)  # white INSIDE the subject must survive
+    cv2.imwrite(str(tmp_path / "s.png"), img)
+    run("cutwhite.py", tmp_path / "s.png")
+    a = cv2.imread(str(tmp_path / "s_cut.png"), cv2.IMREAD_UNCHANGED)[:, :, 3]
+    assert a[5, 5] == 0 and a[60, 60] == 255 and a[60, 30] == 255
+
+
+def blender_exe():
+    import os
+    import shutil
+    if os.environ.get("BLENDER"):
+        return os.environ["BLENDER"]
+    found = shutil.which("blender")
+    if found:
+        return found
+    hits = sorted(Path("C:/Program Files/Blender Foundation").glob("Blender */blender.exe"))
+    return str(hits[-1]) if hits else None
+
+
+@pytest.mark.skipif(blender_exe() is None, reason="Blender not installed (set BLENDER=path)")
+def test_phone_set_casts_a_shadow_across_the_frame(tmp_path):
+    """the off-screen wall edge must leave the left of the wide shot clearly darker than the right"""
+    rng = np.random.default_rng(3)
+    desk = cv2.resize(rng.integers(120, 170, (32, 64, 3), dtype=np.uint8), (512, 256), interpolation=cv2.INTER_CUBIC)
+    cv2.imwrite(str(tmp_path / "desk.png"), desk)
+    (tmp_path / "ui").mkdir()
+    for i in range(2):
+        cv2.imwrite(str(tmp_path / "ui" / f"ui_{i:04d}.png"), np.full((171, 90, 3), 30, np.uint8))
+    r = subprocess.run([blender_exe(), "-b", "-P", str(S / "blender" / "phone_on_desk.py"), "--", "--desk", str(tmp_path / "desk.png"),
+                        "--ui-dir", str(tmp_path / "ui"), "--out", str(tmp_path / "r"), "--frames", "0-0", "--res", "240x180", "--samples", "8"],
+                       capture_output=True, text=True, timeout=900)
+    out = tmp_path / "r" / "frame_0000.png"
+    assert out.exists(), r.stdout[-2000:] + r.stderr[-2000:]
+    g = cv2.cvtColor(cv2.imread(str(out)), cv2.COLOR_BGR2GRAY).astype(float)
+    left, right = g[:, :60].mean(), g[:, -60:].mean()
+    assert left < right * 0.75, (left, right)
+
+
 def test_bracecheck_flags_comment_eating_braces(tmp_path):
     (tmp_path / "bad.jsx").write_text("function f() { if (x) { y(); // note } }\nvar z = 1;\n")
     out = run("bracecheck.py", tmp_path / "bad.jsx")

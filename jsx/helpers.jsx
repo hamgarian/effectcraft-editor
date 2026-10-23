@@ -49,13 +49,18 @@ function P(l, name) {
   return l.property(name);
 }
 
+// match: a display name or id from `effectcraft-cli exec effect.list` ("Hue/Saturation", "ec.color.huesaturation")
+// or an AE match name ("ADBE HUE SATURATION"). A hybrid ("ADBE Hue/Saturation") matches nothing. Failures are
+// collected in FX_FAILS: call fxCheck() at the end of the build so a missing effect fails it instead of hiding in the log.
+var FX_FAILS = [];
 function fx(l, match, params) {
   var e = null, why = "";
   try { e = l.property("Effects").addProperty(match); } catch (err) { why = String(err); }
-  if (!e) { log("effect failed: " + match + " on '" + l.name + "' " + why); return null; }
-  for (var k in params) { try { e.property(k).setValue(params[k]); } catch (err) { log("fx param " + match + "/" + k + ": " + err); } }
+  if (!e) { FX_FAILS.push(match + " on '" + l.name + "' " + why); log("effect failed: " + match + " on '" + l.name + "' " + why); return null; }
+  for (var k in params) { try { e.property(k).setValue(params[k]); } catch (err) { FX_FAILS.push(match + "/" + k + ": " + err); log("fx param " + match + "/" + k + ": " + err); } }
   return e;
 }
+function fxCheck() { if (FX_FAILS.length) throw new Error(FX_FAILS.length + " effect/param failures:\n" + FX_FAILS.join("\n")); }
 
 // startTime first, then in/out; the source comp's duration must cover the out-point or the tail renders empty
 function place(main, c, t0, t1) { var l = main.layers.add(c); l.startTime = t0; l.inPoint = t0; l.outPoint = t1; return l; }
@@ -78,6 +83,56 @@ function dashes(stroke, dash, gap) {
   var d = stroke.property("ADBE Vector Stroke Dashes");
   d.addProperty("ADBE Vector Stroke Dash 1").setValue(dash);
   d.addProperty("ADBE Vector Stroke Gap 1").setValue(gap);
+}
+
+// a rendered PNG sequence (e.g. a Blender set) as one footage layer per frame: pathFn(i) -> file path
+function imageSequence(c, pathFn, n) {
+  var ls = [];
+  for (var i = 0; i < n; i++) {
+    var f = app.project.importFile(new ImportOptions(new File(pathFn(i)))), l = c.layers.add(f);
+    P(l, "Position").setValue([c.width / 2, c.height / 2]);
+    P(l, "Scale").setValue([c.width / f.width * 100, c.height / f.height * 100]);
+    l.inPoint = i / FPS; l.outPoint = (i + 1) / FPS; ls.push(l);
+  }
+  return ls;
+}
+
+// composite a cut-out INTO a plate instead of pasting it: plate comp + cut-out comp (alpha) at pos.
+// match black/white points + saturation to the plate, shade for the light direction (lit at top -> darker at feet),
+// light wrap (blurred plate through an edge band just inside the silhouette), cast + contact shadow, grain + softness.
+// o: {black, white, sat, shadeTop, shadeBottom, castDir:[dx,dy], footY, wrap} (all optional). Returns the cut-out layer.
+function compositeCutout(c, plate, cutout, pos, o) {
+  o = o || {};
+  var pl = c.layers.add(plate); P(pl, "Position").setValue([c.width / 2, c.height / 2]);
+  var fy = o.footY || cutout.height / 2, cd = o.castDir || [60, 200];
+  var cast = c.layers.addShape(); cast.name = "cast shadow"; P(cast, "Position").setValue(pos);
+  var cg = shapeGroup(cast, "cast"), cp = cg.addProperty("ADBE Vector Shape - Group"), sh = new Shape();
+  sh.vertices = [[-cutout.width * 0.12, fy], [cutout.width * 0.12, fy], [cutout.width * 0.12 + cd[0], fy + cd[1]], [-cutout.width * 0.12 + cd[0] * 0.8, fy + cd[1]]];
+  sh.closed = true; cp.property("Path").setValue(sh);
+  cg.addProperty("ADBE Vector Graphic - Fill").property("Color").setValue([0, 0, 0]);
+  P(cast, "Opacity").setValue(45); fx(cast, "ADBE Gaussian Blur 2", { "Blurriness": 26 });
+  var ct = c.layers.addShape(); ct.name = "contact shadow"; P(ct, "Position").setValue([pos[0], pos[1] + fy]);
+  var eg = shapeGroup(ct, "contact"), el = eg.addProperty("ADBE Vector Shape - Ellipse"); el.property("Size").setValue([cutout.width * 0.4, cutout.width * 0.06]);
+  eg.addProperty("ADBE Vector Graphic - Fill").property("Color").setValue([0, 0, 0]);
+  P(ct, "Opacity").setValue(70); fx(ct, "ADBE Gaussian Blur 2", { "Blurriness": 8 });
+  var cl = c.layers.add(cutout); P(cl, "Position").setValue(pos);
+  fx(cl, "ADBE HUE SATURATION", { "Master Saturation": o.sat === undefined ? -30 : o.sat });
+  fx(cl, "ADBE Easy Levels2", { "Output Black": o.black || 0.05, "Output White": o.white || 0.85, "Gamma": 0.95 });
+  fx(cl, "ADBE Gaussian Blur 2", { "Blurriness": 0.8 }); fx(cl, "ADBE Noise", { "Amount of Noise": 7, "Use Color Noise": 0 });
+  var shade = c.layers.addSolid([0, 0, 0], "shade", c.width, c.height, 1);
+  fx(shade, "ADBE Ramp", { "Start of Ramp": [pos[0], pos[1] - cutout.height / 2], "Start Color": o.shadeTop || [0.95, 0.95, 0.95],
+                           "End of Ramp": [pos[0], pos[1] + cutout.height / 2], "End Color": o.shadeBottom || [0.5, 0.48, 0.5] });
+  shade.blendingMode = BlendingMode.MULTIPLY;
+  var sm = c.layers.add(cutout); P(sm, "Position").setValue(pos); shade.trackMatteType = TrackMatteType.ALPHA;
+  // light wrap: edge band = white silhouette minus a blurred black copy of itself
+  var edge = comp(cutout.name + " edge", c.duration, "#000000", c.width, c.height);
+  var ew = edge.layers.add(cutout); P(ew, "Position").setValue(pos); fx(ew, "ADBE Fill", { "Color": [1, 1, 1] });
+  var eb = edge.layers.add(cutout); P(eb, "Position").setValue(pos); fx(eb, "ADBE Fill", { "Color": [0, 0, 0] }); fx(eb, "ADBE Gaussian Blur 2", { "Blurriness": 12 });
+  var wrap = c.layers.add(plate); P(wrap, "Position").setValue([c.width / 2, c.height / 2]); wrap.name = "light wrap";
+  fx(wrap, "ADBE Gaussian Blur 2", { "Blurriness": 40, "Repeat Edge Pixels": 1 }); fx(wrap, "ADBE Easy Levels2", { "Gamma": 1.4 });
+  wrap.blendingMode = BlendingMode.SCREEN; P(wrap, "Opacity").setValue(o.wrap || 75);
+  c.layers.add(edge); wrap.trackMatteType = TrackMatteType.LUMA;
+  return cl;
 }
 
 // infinite background: a frame-sized solid behind every shot layer in `main`, skipping overlays
