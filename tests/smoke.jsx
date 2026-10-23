@@ -37,6 +37,14 @@ var mattes = 0; for (var mi = 1; mi <= cc.numLayers; mi++) { try { if (cc.layer(
 check(mattes == 2, "compositeCutout track mattes: got " + mattes);
 check(kid.property("Effects").numProperties == 4, "cut-out grade effects (hue/sat, levels, blur, noise): got " + kid.property("Effects").numProperties);
 
+// mask, expression, captions
+var ms = main.layers.addSolid([0, 0.5, 1], "masked", 200, 200, 1);
+mask(ms, [[20, 20], [180, 20], [180, 180], [20, 180]], { feather: 10 });
+check(ms.property("ADBE Mask Parade").numProperties == 1, "mask added");
+check(expr(P(ms, "Rotation"), "time*90", 1) == 90, "expression evaluates");
+var cl = captionTrack(main, [{ t0: 0.2, t1: 0.8, text: "hello" }, { t0: 1.0, t1: 1.6, text: "there" }], { box: "#000000" });
+check(cl.property("Source Text").valueAtTime(0.5, false).text == "hello" && cl.property("Source Text").valueAtTime(0.9, false).text == " ", "caption timing");
+
 // every effect used so far must have resolved; then a bogus name must be caught by fxCheck()
 check(FX_FAILS.length == 0, "effect failures: " + FX_FAILS.join("; "));
 fx(sl, "ADBE Hue/Saturation", {});

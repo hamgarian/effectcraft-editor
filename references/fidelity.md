@@ -13,6 +13,13 @@ to compare rounds against each other.
 | 4. Visual aligned | timing, layout, motion, colour, type and lens match closely enough for human review | levels 1-3, plus: side-by-side grids at a declared interval, dense 1-frame grids around every transition, `framemetrics.py` lead/lag list empty or explained, luma per 0.5 s within ~30, accepted differences listed |
 | 5. Style aligned | palette, motion grammar, rhythm, transition vocabulary, but not the exact shots | a written breakdown of the reference's language and where the edit uses it |
 
+## Rebuild vs replay
+
+A **rebuild** is your own layers, keys and art: editable and reusable (this skill's normal output). A **replay** places
+the reference's own frames back (e.g. as an image sequence): it can reach codec-level error (`framemetrics.py
+--baseline` shows the codec's own floor) but it is not a component and carries the reference's rights. Never present
+a replay as a rebuild, and keep the two apart in `components.md`.
+
 ## Promise rules
 
 - Sampled sheets locate problems; they never approve a range. Approve with every-frame tools (`framemetrics.py`, `glitchfind.py`, `edgeblack.py`) over the whole range.

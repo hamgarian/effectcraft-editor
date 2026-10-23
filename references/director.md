@@ -27,6 +27,13 @@ Rules:
 - Each scene gets its own world (environment, props, light). The camera carries continuity between them: whips, match cuts, a shared colour.
 - Generated images only where they carry the story (a character, a place, an object), and plan how each one moves after it appears.
 
+## Starting from a reference you like (style, not copy)
+
+`python scripts/stylemap.py REF.mp4 OUT` writes the reference's shot list (durations, measured camera move,
+palette, brightness, motion energy, tempo, cuts on beats) as this beat table with those columns filled. Keep the
+rhythm, camera language, palette and energy; write your own job, moving object and change for every row. Swap the
+palette deliberately if the brand needs it, but keep its contrast and number of colours.
+
 ## 3. Slideshow check (before building, and again on the render)
 
 Revise if any of these show up:

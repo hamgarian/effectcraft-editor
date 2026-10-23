@@ -4,6 +4,8 @@ the frames around every reference cut (boundaries), and frames whose best match 
 Usage: python framemetrics.py REF.mp4 MINE.mp4 [--ref-start N] [--mine-start N] [--count N]
                               [--width 320] [--max-offset 3] [--worst 6] [--out DIR]
 Writes DIR/metrics.json and DIR/worst.png (ref | mine | difference heat map) when --out is given.
+--baseline: re-encode the reference with the candidate's codec and bitrate and measure ref vs that copy: the codec's
+own error (noise floor). Candidate frames within floor + 1 are marked codec-level, not a mismatch (exact-replay work).
 """
 import json
 import os
@@ -21,6 +23,9 @@ def opt(name, default, cast=int):
 
 ref_start, mine_start, count = opt("--ref-start", 0), opt("--mine-start", 0), opt("--count", 0)
 width, max_off, n_worst, out = opt("--width", 320), opt("--max-offset", 3), opt("--worst", 6), opt("--out", "", str)
+baseline = "--baseline" in sys.argv
+if baseline:
+    sys.argv.remove("--baseline")
 if len(sys.argv) != 3:
     sys.exit(__doc__)
 
@@ -82,6 +87,22 @@ lead = [r for r in rows if r["best_offset"]]
 summary = {"frames": n, "mean_mae": round(float(np.mean([r["mae"] for r in rows])), 2), "max_mae": max(r["mae"] for r in rows),
            "mean_ssim": round(float(np.mean([r["ssim"] for r in rows])), 4), "ref_cuts": [ref_start + c for c in cuts],
            "temporal_mismatches": len(lead)}
+if baseline:
+    import subprocess
+    import tempfile
+    pr = json.loads(subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=codec_name,bit_rate,pix_fmt",
+                                    "-of", "json", sys.argv[2]], capture_output=True, text=True).stdout)["streams"][0]
+    enc = {"h264": "libx264", "hevc": "libx265", "vp9": "libvpx-vp9", "prores": "prores_ks", "av1": "libaom-av1"}.get(pr["codec_name"], "libx264")
+    ctl = os.path.join(tempfile.mkdtemp(), "control.mp4" if enc != "prores_ks" else "control.mov")
+    cmd = ["ffmpeg", "-v", "error", "-y", "-i", sys.argv[1], "-c:v", enc, "-pix_fmt", pr.get("pix_fmt", "yuv420p"), "-an"]
+    cmd += ["-b:v", pr["bit_rate"]] if pr.get("bit_rate") else []
+    subprocess.run(cmd + [ctl], check=True)
+    ctrl = frames(ctl, ref_start, count, width)
+    floor = [mae(ref[i], ctrl[i]) for i in range(min(n, len(ctrl)))]
+    fl = float(np.percentile(floor, 95)) if floor else 0.0
+    for r in rows:
+        r["codec_level"] = r["mae"] <= fl + 1.0
+    summary.update({"codec_floor_p95": round(fl, 2), "frames_above_codec_floor": sum(not r["codec_level"] for r in rows)})
 print(json.dumps(summary))
 print("worst:", ", ".join(f"f{r['ref_frame']} mae {r['mae']} ssim {r['ssim']}" for r in worst))
 print("boundaries:", ", ".join(f"f{rows[j]['ref_frame']} mae {rows[j]['mae']}" for j in bounds) or "none")

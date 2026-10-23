@@ -134,6 +134,56 @@ def test_probe_locks_and_flags(vids):
     assert "mismatch" in run("probe.py", vids / "ref.mp4", vids / "short.mp4")
 
 
+def test_framemetrics_baseline_marks_codec_noise(vids, tmp_path):
+    out = run("framemetrics.py", vids / "ref.mp4", vids / "ref.mp4", "--baseline")
+    s = json.loads(out.splitlines()[0])
+    assert "codec_floor_p95" in s and s["frames_above_codec_floor"] == 0, s
+
+
+def test_joincheck_flags_jump_and_repeat(tmp_path):
+    for i in range(20):   # a steadily moving bar
+        img = np.zeros((90, 160, 3), np.uint8); cv2.rectangle(img, (i * 6, 20), (i * 6 + 20, 70), (255, 255, 255), -1)
+        cv2.imwrite(str(tmp_path / f"f_{i:05d}.png"), img)
+    assert "seams clean" in run("joincheck.py", tmp_path, "--joins", "10")
+    cv2.imwrite(str(tmp_path / "f_00010.png"), cv2.imread(str(tmp_path / "f_00009.png")))   # a repeated frame at the seam
+    r = subprocess.run([sys.executable, str(S / "joincheck.py"), tmp_path, "--joins", "10"], capture_output=True, text=True)
+    assert r.returncode == 1 and "REPEATED" in r.stdout, r.stdout
+
+
+def test_stylemap_shots_and_table(vids, tmp_path):
+    out = run("stylemap.py", vids / "ref.mp4", tmp_path / "s")
+    s = json.loads(out.splitlines()[0])
+    assert s["shots"] == 2, s   # the push-in, then the flat grey after the cut at f25
+    table = (tmp_path / "s" / "stylemap.md").read_text()
+    assert "push in" in table and (tmp_path / "s" / "shots.png").exists()
+
+
+def test_ledger_flags_unfinished_and_changed(tmp_path):
+    led = tmp_path / "l.jsonl"; f = tmp_path / "out.txt"; f.write_text("v1")
+    rid = run("ledger.py", "start", "render", "--ledger", led).strip()
+    assert "UNKNOWN" in run("ledger.py", "status", "--ledger", led)
+    run("ledger.py", "end", rid, "--outputs", f, "--ledger", led)
+    assert " ok " in run("ledger.py", "status", "--ledger", led)
+    f.write_text("v2")
+    r = subprocess.run([sys.executable, str(S / "ledger.py"), "verify", "--ledger", str(led)], capture_output=True, text=True)
+    assert r.returncode == 1 and "changed" in r.stdout
+
+
+def test_title_art_fits_band(tmp_path):
+    cv2.imwrite(str(tmp_path / "a.png"), np.full((400, 300, 3), 230, np.uint8))
+    run("title_art.py", tmp_path / "a.png", tmp_path / "b.png", "--title", "VERY LONG TITLE HERE", "--band", "0.2")
+    ink = np.where(cv2.imread(str(tmp_path / "b.png"))[:, :, 0] < 128)
+    assert ink[0].size > 0 and ink[0].max() < 0.2 * 400   # the title stays inside its band...
+    assert ink[1].min() > 0 and ink[1].max() < 299        # ...and inside the width
+    run("title_art.py", tmp_path / "a.png", tmp_path / "c.png", "--label", "NIGHT BUS")
+    assert (cv2.imread(str(tmp_path / "c.png"))[20, 30] < 40).all()   # black label strip drawn
+
+
+def test_doctor_runs(tmp_path):
+    r = subprocess.run([sys.executable, str(S / "doctor.py")], capture_output=True, text=True)
+    assert "python" in r.stdout and ("ready" in r.stdout or "missing" in r.stdout)
+
+
 def test_cutwhite_keeps_inner_white(tmp_path):
     img = np.full((120, 120, 3), 255, np.uint8)
     cv2.circle(img, (60, 60), 40, (0, 0, 200), -1)

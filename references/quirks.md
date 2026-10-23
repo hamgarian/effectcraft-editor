@@ -21,7 +21,11 @@ Each one caused a visible bug in a real build. "Verified" = reproduced by `tests
 | An effect name that doesn't resolve fails silently: `fx()` logs one line among hundreds and the build "succeeds". `"ADBE Hue/Saturation"` matched nothing for several rounds. Verified. | Names from `exec effect.list`; `fxCheck()` at the end of the build throws on any failure; `scripts/fxprobe.jsx` shows what a name resolves to. |
 | A thin shape scaled by thousands of percent (a 20 px drape at 9000% X) clips at a raster size limit: only part of it renders. | Draw the shape at its real size and scale less (500%). |
 | A Linear Wipe on a text layer wipes the text BOX, which is wider than the ink, so a write-on appears late. | Start the wipe before the layer's visible start (e.g. 0.25 s early). |
-| `render-frame` output is RGB. | For alpha, render an RGBA PNG sequence with `render`. |
+| `render-frame` output is RGB. | For alpha, render an RGBA PNG sequence with `render` (or `scripts/export.py` presets). |
+| A null is a 100 px square anchored at [50,50]: children placed at [0,0] sit 50 px up-left of the null's position. Verified (title and kinetic type rendered at x 0.46, y 0.42 of frame). | Reset the null's Anchor Point to [0,0] (`rig()` in templates.jsx). |
+| Text sits on its baseline, so "centred" text renders above centre. | Anchor on the measured ink: `sourceRectAtTime(0,false)` -> anchor = rect centre (`text()` in templates.jsx does it). |
+| `essential.addProperty` with a layer INDEX resolved to a different layer ("no property text/sourceText"). | Address layers by unique name. |
+| `track.motion` only creates a tracker (0 keys). | `track.new` -> `track.setPoint` -> `track.analyze {wait:true}` -> `track.apply` (`trackAttach()`). |
 
 ## Effects seen working in 0.14.0
 

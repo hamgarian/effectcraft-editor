@@ -85,6 +85,68 @@ function dashes(stroke, dash, gap) {
   d.addProperty("ADBE Vector Stroke Gap 1").setValue(gap);
 }
 
+// any engine command from a script (ids from `effectcraft-cli commands --filter X`); failures land in FX_FAILS
+function run(id, params) {
+  try { return app.run(id, params || {}); } catch (e) { FX_FAILS.push(id + ": " + e); log("run " + id + ": " + e); return null; }
+}
+
+// mask from points (layer space). o: {feather, mode: "add"|"subtract"|..., inverted, closed, inT, outT}
+function mask(l, pts, o) {
+  o = o || {};
+  var m = l.property("ADBE Mask Parade").addProperty("ADBE Mask Atom"), s = new Shape();
+  s.vertices = pts; s.closed = o.closed !== false;
+  if (o.inT) s.inTangents = o.inT; if (o.outT) s.outTangents = o.outT;
+  m.property("ADBE Mask Shape").setValue(s);
+  if (o.feather) m.property("ADBE Mask Feather").setValue([o.feather, o.feather]);
+  if (o.inverted) { try { m.inverted = true; } catch (e) {} }
+  return m;
+}
+
+// expression on a property; returns the value at time t so a typo shows up as an error, not as a silent default
+function expr(p, code, t) {
+  p.expression = code;
+  try { return p.valueAtTime(t || 0, false); } catch (e) { FX_FAILS.push("expression: " + code + " -> " + e); return null; }
+}
+
+// motion-track a point in footage layer `src` and pin `target` (a layer) to it.
+// center: [x, y] of a high-contrast feature on the first frame (layer space). Returns the tracker status.
+function trackAttach(src, target, center, o) {
+  o = o || {};
+  run("track.new", { layer: src.index, kind: "transform", position: true, rotation: !!o.rotation, scale: !!o.scale, target: target.index });
+  run("track.setPoint", { layer: src.index, point: 1, center: center, featureSize: o.feature || [30, 30], searchSize: o.search || [80, 80] });
+  run("track.analyze", { layer: src.index, direction: "forward", wait: true });
+  var st = run("track.status", { layer: src.index });
+  run("track.apply", { layer: src.index });
+  return st;
+}
+// stabilize a shaky footage layer (Warp Stabilizer; blocks until analysed)
+function stabilize(src) { return run("track.warpStabilizer", { layer: src.index, wait: true }); }
+
+// burned-in captions: caps = [{t0, t1, text}] (scripts/captions.py writes them as CAPTIONS). One text layer with hold
+// keys on Source Text, plus an optional box. o: {font, size, fill, pos: [x, y], box: "#000000", boxOpacity: 60}
+function captionTrack(c, caps, o) {
+  o = o || {};
+  var l = c.layers.addText(" "), sp = l.property("Source Text"), td = sp.value;
+  td.font = o.font || "Arial Black"; td.fontSize = o.size || Math.round(c.height * 0.045); td.applyFill = true; td.fillColor = hex(o.fill || "#ffffff");
+  try { td.justification = ParagraphJustification.CENTER_JUSTIFY; } catch (e) {}
+  sp.setValue(td); l.name = "captions";
+  P(l, "Position").setValue(o.pos || [c.width / 2, c.height * 0.86]);
+  sp.setValueAtTime(0, " ");
+  for (var i = 0; i < caps.length; i++) { sp.setValueAtTime(caps[i].t0, caps[i].text); sp.setValueAtTime(caps[i].t1, " "); }
+  for (var k = 1; k <= sp.numKeys; k++) { try { sp.setInterpolationTypeAtKey(k, KeyframeInterpolationType.HOLD); } catch (e) {} }
+  if (o.box) {
+    var b = c.layers.addShape(); b.name = "caption box"; P(b, "Position").setValue(o.pos || [c.width / 2, c.height * 0.86]);
+    var g = shapeGroup(b, "box"), r = g.addProperty("ADBE Vector Shape - Rect");
+    r.property("Size").setValue([c.width * 0.8, (o.size || c.height * 0.045) * 1.6]);
+    g.addProperty("ADBE Vector Graphic - Fill").property("Color").setValue(hex(o.box));
+    var op = P(b, "Opacity"); op.setValueAtTime(0, 0);
+    for (var j = 0; j < caps.length; j++) { op.setValueAtTime(caps[j].t0, o.boxOpacity || 60); op.setValueAtTime(caps[j].t1, 0); }
+    for (var q = 1; q <= op.numKeys; q++) { try { op.setInterpolationTypeAtKey(q, KeyframeInterpolationType.HOLD); } catch (e) {} }
+    b.moveAfter(l);
+  }
+  return l;
+}
+
 // a rendered PNG sequence (e.g. a Blender set) as one footage layer per frame: pathFn(i) -> file path
 function imageSequence(c, pathFn, n) {
   var ls = [];

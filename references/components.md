@@ -17,6 +17,22 @@ evidence: <what measured or reviewed it, and when>
 limits: <where it breaks>
 ```
 
+## Runnable templates (`jsx/templates.jsx`)
+
+Each returns a comp; `essentialize()` exposes named controls and `exportTemplate()` writes an `.ectemplate` that
+`effectcraft-cli render --template T --values v.json` renders without a script. `tests/test_engine.py` renders all of them.
+
+| function | what | controls |
+|---|---|---|
+| `lowerThird({name, role, accent})` | accent bar wipes in from the left, name wipes on, role rises; reversed exit | Name, Role |
+| `titleCard({title, sub, bg, fg})` | title slams in with a 2-frame overshoot, subtitle rises, slow push | Title, Subtitle |
+| `logoReveal({logo, bg})` | feathered circle mask grows from the centre, light sweep across the logo | Logo text |
+| `kineticType({words, times})` | one word per beat, slam + alternating tilt, slow push (`times` from `audio.py beats`) | - |
+| `textOrbit3D({text, radius})` | characters on a 3D ring turning once | - |
+| `socialReframe(comp, preset, {safe})` | any comp into vertical / square / portrait over a blurred fill, safe-area guide | - |
+
+## Patterns
+
 ### whip-cut
 use: cutting between two shots with energy, keeping the eye on the incoming key element
 inputs: outgoing shot, incoming shot, whip direction

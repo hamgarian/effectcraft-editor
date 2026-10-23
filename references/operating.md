@@ -11,6 +11,13 @@ here against EffectCraft 0.14.0 where marked.
 - In JSX, `addProperty()` accepts the **display name** ("Hue/Saturation"), the **id** ("ec.color.huesaturation") or the AE match name ("ADBE HUE SATURATION"). A mixed form ("ADBE Hue/Saturation") resolves to nothing. Use the names `effect.list` prints, and end every build with `fxCheck()`. (0.14.0, checked; `scripts/fxprobe.jsx`)
 - If a needed effect doesn't exist (no Light Wrap, Color Halftone, Gradient Map in 0.14.0), build it from parts (see `compositeCutout()` for light wrap) and say so. Never substitute a similar-named effect silently.
 
+## Engine commands from a script
+`app.run(id, params)` runs any engine command inside a JSX build; `run()` in helpers wraps it and records failures for
+`fxCheck()`. Checked on 0.14.0:
+- tracking: `track.new {layer, kind, position, target}` -> `track.setPoint {point: 1, center, featureSize, searchSize}` -> `track.analyze {wait: true}` -> `track.apply` (`trackAttach()`); also `track.mask`, `track.camera`, `track.warpStabilizer` (`stabilize()`), face tracking models.
+- Essential Graphics: `essential.addProperty {comp, layer: NAME, path: "text/sourceText", name}` (address layers by name: an index went to the wrong layer), `essential.exportTemplate {comp, path}`.
+- property paths look like `text/sourceText`, `transform/opacity`, `effects/#1/blurriness` (`effectcraft-cli props --project P COMP LAYER --flat` lists them).
+
 ## Interfaces
 - **CLI, headless**: `script build.jsx --empty`, `render-frame`, `props`, `get`, `set`, `exec <id> --params <json>`. What these recipes use.
 - **MCP**: `effectcraft-cli mcp` (headless; add `--autosave`, or call `save_project` at milestones, or the work lives only in memory) or `mcp --bridge 9877` to drive an open app started with `--control 9877`. The live bridge exits if the app isn't running when the agent starts.
